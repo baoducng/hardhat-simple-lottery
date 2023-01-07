@@ -74,10 +74,6 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
         s_players.push(payable(msg.sender));
         emit RaffleEnter(msg.sender);
-
-        //check if it is more then entrance fee
-        //if yes then we add it to the lottery list
-        //add msg.sender to the list
     }
 
     /*
@@ -168,5 +164,9 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function getRequestConfirmations() public pure returns (uint256) {
         return REQUEST_CONFIRMATION;
+    }
+
+    function getInterval() public view returns (uint256) {
+        return i_interval;
     }
 }

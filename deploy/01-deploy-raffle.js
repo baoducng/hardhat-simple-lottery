@@ -16,6 +16,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     if (chainId == 31337) {
         // create VRFV2 Subscription
         vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock")
+
         vrfCoordinatorV2Address = vrfCoordinatorV2Mock.address
         const transactionResponse = await vrfCoordinatorV2Mock.createSubscription()
         const transactionReceipt = await transactionResponse.wait(1)
@@ -42,4 +43,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
         log: true,
         waitConfirmations: 0,
     })
+    if (chainId == 31337) {
+        await vrfCoordinatorV2Mock.addConsumer(subscriptionId, raffle.address)
+    }
 }
+
+module.exports.tags = ["all", "mocks"]
