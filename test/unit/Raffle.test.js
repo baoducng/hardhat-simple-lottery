@@ -15,7 +15,7 @@ const { developmentChains, networkConfig } = require("../../helper-hardhat-confi
               await deployments.fixture(["all"])
               raffle = await ethers.getContract("Raffle", deployer)
               vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock", deployer)
-              raffleEntranceFee = raffle.getEntranceFee()
+              raffleEntranceFee = await raffle.getEntranceFee()
               interval = await raffle.getInterval()
           })
 
@@ -102,6 +102,58 @@ const { developmentChains, networkConfig } = require("../../helper-hardhat-confi
                   await expect(raffle.performUpkeep([])).to.emit(raffle, "RequestedRaffleWinner")
                   const raffleState = await raffle.getRaffleState()
                   assert.equal(raffleState.toString(), "1")
+              })
+          })
+          describe("fulfillRandomWords", function () {
+              beforeEach(async () => {
+                  await raffle.enterRaffle({ value: raffleEntranceFee })
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  await network.provider.request({ method: "evm_mine", params: [] })
+              })
+              it("can only be called after performupkeep", async () => {
+                  await expect(
+                      vrfCoordinatorV2Mock.fulfillRandomWords(0, raffle.address) // reverts if not fulfilled
+                  ).to.be.revertedWith("nonexistent request")
+                  await expect(
+                      vrfCoordinatorV2Mock.fulfillRandomWords(1, raffle.address) // reverts if not fulfilled
+                  ).to.be.revertedWith("nonexistent request")
+              })
+              it("picks winner, reset lottery, send money", async () => {
+                  const additionalEntrances = 3
+                  const startingAccountIndex = 1 //deployer is account 0
+                  accounts = await ethers.getSigners()
+                  for (
+                      let i = startingAccountIndex;
+                      i < startingAccountIndex + additionalEntrances;
+                      i++
+                  ) {
+                      const accountConnectedRaffle = raffle.connect(accounts[i])
+                      await accountConnectedRaffle.enterRaffle({ value: raffleEntranceFee })
+                  }
+                  const startingTimeStamp = await raffle.getLatestTimeStamps()
+                  await new Promise(async (resolve, reject) => {
+                      raffle.once("WinnerPicked", async () => {
+                          try {
+                              const recentWinner = await raffle.getRecentWinner()
+                              console.log("recentWinner", recentWinner)
+                              const raffleState = await raffle.getRaffleState()
+                              const endingTimeStamp = await raffle.getLatestTimeStamps()
+                              const numPlayers = await raffle.getNumberOfPlayers()
+                              assert.equal(numPlayers.toString(), "0")
+                              assert.equal(raffleState.toString(), "0")
+                              assert(endingTimeStamp > startingTimeStamp)
+                              resolve()
+                          } catch (e) {
+                              reject(e)
+                          }
+                      })
+                      const tx = await raffle.performUpkeep([])
+                      const txReceipt = await tx.wait(1)
+                      await vrfCoordinatorV2Mock.fulfillRandomWords(
+                          txReceipt.events[1].args.requestId,
+                          raffle.address
+                      )
+                  })
               })
           })
       })
