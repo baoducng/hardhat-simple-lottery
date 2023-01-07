@@ -135,13 +135,23 @@ const { developmentChains, networkConfig } = require("../../helper-hardhat-confi
                       raffle.once("WinnerPicked", async () => {
                           try {
                               const recentWinner = await raffle.getRecentWinner()
-                              console.log("recentWinner", recentWinner)
                               const raffleState = await raffle.getRaffleState()
                               const endingTimeStamp = await raffle.getLatestTimeStamps()
                               const numPlayers = await raffle.getNumberOfPlayers()
+                              const winnerEndingBalance = await accounts[1].getBalance()
                               assert.equal(numPlayers.toString(), "0")
                               assert.equal(raffleState.toString(), "0")
                               assert(endingTimeStamp > startingTimeStamp)
+                              assert.equal(
+                                  winnerEndingBalance.toString(),
+                                  winnerStartingBalance // startingBalance + ( (raffleEntranceFee * additionalEntrances) + raffleEntranceFee )
+                                      .add(
+                                          raffleEntranceFee
+                                              .mul(additionalEntrances)
+                                              .add(raffleEntranceFee)
+                                      )
+                                      .toString()
+                              )
                               resolve()
                           } catch (e) {
                               reject(e)
@@ -149,6 +159,8 @@ const { developmentChains, networkConfig } = require("../../helper-hardhat-confi
                       })
                       const tx = await raffle.performUpkeep([])
                       const txReceipt = await tx.wait(1)
+                      //I know that the first account is the winner though console logging the results
+                      const winnerStartingBalance = await accounts[1].getBalance()
                       await vrfCoordinatorV2Mock.fulfillRandomWords(
                           txReceipt.events[1].args.requestId,
                           raffle.address
