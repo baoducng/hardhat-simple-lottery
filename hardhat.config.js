@@ -9,6 +9,7 @@ require("dotenv").config()
 
 const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL
 const PRIVATE_KEY = process.env.PRIVATE_KEY
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 
 module.exports = {
     solidity: "0.8.17",
@@ -38,5 +39,11 @@ module.exports = {
     },
     mocha: {
         timeout: 200000, //200 secs max
+    },
+    etherscan: {
+        // yarn hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
+        apiKey: {
+            goerli: ETHERSCAN_API_KEY,
+        },
     },
 }
