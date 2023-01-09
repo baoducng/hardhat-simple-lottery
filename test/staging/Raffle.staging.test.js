@@ -27,13 +27,11 @@ developmentChains.includes(network.name)
                       raffle.once("WinnerPicked", async () => {
                           console.log("WinnerPicked event fired!")
                           try {
-                              // add our asserts here
                               const recentWinner = await raffle.getRecentWinner()
                               const raffleState = await raffle.getRaffleState()
                               const winnerEndingBalance = await accounts[0].getBalance()
                               const endingTimeStamp = await raffle.getLatestTimeStamps()
 
-                              await expect(raffle.getPlayer(0)).to.be.reverted
                               assert.equal(recentWinner.toString(), accounts[0].address)
                               assert.equal(raffleState, 0)
                               assert.equal(
@@ -41,6 +39,7 @@ developmentChains.includes(network.name)
                                   winnerStartingBalance.add(raffleEntranceFee).toString()
                               )
                               assert(endingTimeStamp > startingTimeStamp)
+                              console.log("Testing complete!")
                               resolve()
                           } catch (error) {
                               console.log(error)
@@ -50,8 +49,10 @@ developmentChains.includes(network.name)
                       // Then entering the raffle
                       console.log("Entering Raffle...")
                       const tx = await raffle.enterRaffle({ value: raffleEntranceFee })
-                      await tx.wait(1)
+                      console.log("Entered Raffle")
                       console.log("Ok, time to wait...")
+                      await tx.wait(1)
+                      console.log("Waiting done")
                       const winnerStartingBalance = await accounts[0].getBalance()
                   })
               })

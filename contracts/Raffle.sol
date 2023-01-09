@@ -169,4 +169,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     function getInterval() public view returns (uint256) {
         return i_interval;
     }
+
+    function getOnePlusOne() public pure returns (uint256) {
+        return 1 + 1;
+    }
 }
