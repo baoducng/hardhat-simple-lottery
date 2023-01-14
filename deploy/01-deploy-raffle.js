@@ -12,6 +12,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     const { deployer } = await getNamedAccounts()
     const chainId = network.config.chainId
     let vrfCoordinatorV2Address, subscriptionId, vrfCoordinatorV2Mock
+    const waitConfirmations = developmentChains.includes(network.name)
+        ? 1
+        : VERIFICATION_BLOCK_CONFIRMATIONS
 
     if (chainId == 31337) {
         // create VRFV2 Subscription
@@ -41,8 +44,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
         from: deployer,
         args: arguments,
         log: true,
-        waitConfirmations: 2,
+        waitConfirmations: waitConfirmations,
     })
+
     if (chainId == 31337) {
         await vrfCoordinatorV2Mock.addConsumer(subscriptionId, raffle.address)
     }
